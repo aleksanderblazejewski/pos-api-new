@@ -96,6 +96,7 @@ class Logowanie(db.Model):
     Pracownicy_ID = db.Column(db.Integer, db.ForeignKey("Pracownicy.ID"), nullable=False, unique=True)
     Login = db.Column(db.String(255), nullable=False)
     Haslo = db.Column(db.String(255), nullable=False)
+    Sol = db.Column(db.String(255), nullable=False, default="")
 
 
 class Ustawienia(db.Model):
