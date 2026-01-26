@@ -137,7 +137,7 @@ def sync_table_groups():
             # jeśli stolik nie istnieje w Stoliki, to go utwórz (żeby przypisanie działało)
             st = Stoliki.query.get(tid)
             if not st:
-                st = Stoliki(ID=tid, Ile_osob=4, Strefa_ID=DEFAULT_GROUP_ID)  # legacy ustawimy niżej
+                st = Stoliki(ID=tid, Ile_osob=4, Strefa_ID=DEFAULT_GROUP_ID)
                 db.session.add(st)
                 db.session.flush()
 
@@ -171,7 +171,7 @@ def sync_table_groups():
                 # jeśli UI wysłał ID którego nie ma w Pracownicy, pomijamy (żeby nie robić 500)
                 continue
             if sid not in staff_to_kelner_id:
-                new_k = Kelnerzy(Pracownicy_ID=sid, Strefa_ID=DEFAULT_GROUP_ID)  # legacy ustawimy niżej
+                new_k = Kelnerzy(Pracownicy_ID=sid, Strefa_ID=DEFAULT_GROUP_ID)
                 db.session.add(new_k)
                 db.session.flush()
                 staff_to_kelner_id[sid] = new_k.ID

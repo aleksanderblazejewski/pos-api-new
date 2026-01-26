@@ -56,6 +56,7 @@ def create_staff():
         Pracownicy_ID=prac.ID,
         Login=login,
         Haslo=pwd_hash,
+        Sol="",
     )
     db.session.add(log)
     db.session.commit()
@@ -157,6 +158,7 @@ def sync_staff():
                 Pracownicy_ID=prac.ID,
                 Login=login,
                 Haslo=pwd_hash,
+                Sol="",
             )
             db.session.add(log)
         else:

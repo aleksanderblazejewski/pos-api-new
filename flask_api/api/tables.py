@@ -119,9 +119,10 @@ def sync_tables():
             stolik = Stoliki(ID=table_id, Ile_osob=4, Strefa_ID=strefa.ID)
             db.session.add(stolik)
             db.session.flush()
-        else:
-            if stolik.Strefa_ID is None:
-                stolik.Strefa_ID = strefa.ID
+        elif stolik.Strefa_ID is None:
+            stolik.Strefa_ID = strefa.ID
+        if strefa not in stolik.strefy:
+            stolik.strefy.append(strefa)
 
         row = MapaStolikow.query.filter_by(Stoliki_ID=stolik.ID).first()
         if row:

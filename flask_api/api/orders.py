@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 
 from flask import jsonify, request
@@ -146,7 +147,7 @@ def create_order():
     if not table_id or not waiter_id or not items:
         return jsonify({"error": "Missing TableId / WaiterId / Items"}), 400
 
-    now = datetime.utcnow()
+    now = datetime.now(ZoneInfo("Europe/Warsaw")).replace(tzinfo=None)
     zam = Zamowienia(
         Data=now,
         Status="open",
@@ -233,6 +234,10 @@ def sync_orders():
         kelner = Kelnerzy(Pracownicy_ID=prac.ID, Strefa_ID=strefa.ID)
         db.session.add(kelner)
         db.session.flush()
+        if kelner.Strefa_ID is None:
+            kelner.Strefa_ID = strefa.ID
+        if strefa not in kelner.strefy:
+            kelner.strefy.append(strefa)
         return kelner.ID
 
     default_waiter_id = get_default_waiter_id()
@@ -260,6 +265,10 @@ def sync_orders():
             stolik = Stoliki(ID=table_id, Ile_osob=4, Strefa_ID=strefa.ID)
             db.session.add(stolik)
             db.session.flush()
+            if stolik.Strefa_ID is None:
+                stolik.Strefa_ID = strefa.ID
+            if strefa not in stolik.strefy:
+                stolik.strefy.append(strefa)
 
         for o in (table_block.get("Orders") or []):
             created_at = parse_iso_datetime(o.get("CreatedAt"))
