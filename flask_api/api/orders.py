@@ -231,9 +231,11 @@ def sync_orders():
             db.session.add(strefa)
             db.session.flush()
 
-        kelner = Kelnerzy(Pracownicy_ID=prac.ID)
+        kelner = Kelnerzy(Pracownicy_ID=prac.ID, Strefa_ID=strefa.ID)
         db.session.add(kelner)
         db.session.flush()
+        if kelner.Strefa_ID is None:
+            kelner.Strefa_ID = strefa.ID
         if strefa not in kelner.strefy:
             kelner.strefy.append(strefa)
         return kelner.ID
@@ -260,9 +262,11 @@ def sync_orders():
                 db.session.add(strefa)
                 db.session.flush()
 
-            stolik = Stoliki(ID=table_id, Ile_osob=4)
+            stolik = Stoliki(ID=table_id, Ile_osob=4, Strefa_ID=strefa.ID)
             db.session.add(stolik)
             db.session.flush()
+            if stolik.Strefa_ID is None:
+                stolik.Strefa_ID = strefa.ID
             if strefa not in stolik.strefy:
                 stolik.strefy.append(strefa)
 

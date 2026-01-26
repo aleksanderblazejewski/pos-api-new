@@ -33,6 +33,7 @@ class Stoliki(db.Model):
     __tablename__ = "Stoliki"
     ID = db.Column(db.Integer, primary_key=True)
     Ile_osob = db.Column(db.Integer, nullable=False)
+    Strefa_ID = db.Column(db.Integer, db.ForeignKey("Strefa.ID"), nullable=False)
 
     # MANY-TO-MANY: Stoliki <-> Strefa
     strefy = db.relationship(
@@ -69,6 +70,7 @@ class Kelnerzy(db.Model):
     __tablename__ = "Kelnerzy"
     ID = db.Column(db.Integer, primary_key=True)
     Pracownicy_ID = db.Column(db.Integer, db.ForeignKey("Pracownicy.ID"), nullable=False, unique=True)
+    Strefa_ID = db.Column(db.Integer, db.ForeignKey("Strefa.ID"), nullable=False)
 
     # MANY-TO-MANY: Kelnerzy <-> Strefa
     strefy = db.relationship(

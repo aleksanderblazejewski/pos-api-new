@@ -116,9 +116,11 @@ def sync_tables():
 
         stolik = Stoliki.query.get(table_id)
         if not stolik:
-            stolik = Stoliki(ID=table_id, Ile_osob=4)
+            stolik = Stoliki(ID=table_id, Ile_osob=4, Strefa_ID=strefa.ID)
             db.session.add(stolik)
             db.session.flush()
+        elif stolik.Strefa_ID is None:
+            stolik.Strefa_ID = strefa.ID
         if strefa not in stolik.strefy:
             stolik.strefy.append(strefa)
 
