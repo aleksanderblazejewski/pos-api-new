@@ -70,8 +70,6 @@ def sync_table_groups():
 
     Nowe zachowanie:
     - replace relacji w tabelach łączących
-    - utrzymanie legacy: Stoliki.Strefa_ID i Kelnerzy.Strefa_ID jako "primary zone"
-      (pierwsza strefa z payloadu dla danego obiektu, a jeśli brak -> DEFAULT_GROUP_ID)
     """
     data = request.get_json(silent=True) or []
     if not isinstance(data, list):
@@ -102,10 +100,6 @@ def sync_table_groups():
     zone_to_tables: dict[int, set[int]] = {}
     zone_to_staff: dict[int, set[int]] = {}
 
-    # oraz "primary zone" dla legacy kolumn:
-    table_primary_zone: dict[int, int] = {}
-    staff_primary_zone: dict[int, int] = {}
-
     for item in data:
         gid = item.get("Id")
         if gid is None:
@@ -116,14 +110,11 @@ def sync_table_groups():
         for tid in (item.get("AssignedTableIds") or []):
             tid = int(tid)
             tset.add(tid)
-            # jeśli stolik ma trafić do kilku stref, "primary" ustawiamy jako pierwszą napotkaną
-            table_primary_zone.setdefault(tid, gid)
 
         sset = zone_to_staff.setdefault(gid, set())
         for sid in (item.get("AssignedStaffIds") or []):
             sid = int(sid)
             sset.add(sid)
-            staff_primary_zone.setdefault(sid, gid)
 
     # 3) REPLACE relacji stolik-strefa w tabeli łączącej (per strefa)
     #    Czyścimy tylko strefy, które przyszły w payloadzie (nie ruszamy innych, jeśli istnieją dodatkowo)
@@ -137,7 +128,7 @@ def sync_table_groups():
             # jeśli stolik nie istnieje w Stoliki, to go utwórz (żeby przypisanie działało)
             st = Stoliki.query.get(tid)
             if not st:
-                st = Stoliki(ID=tid, Ile_osob=4, Strefa_ID=DEFAULT_GROUP_ID)  # legacy ustawimy niżej
+                st = Stoliki(ID=tid, Ile_osob=4)
                 db.session.add(st)
                 db.session.flush()
 
@@ -171,7 +162,7 @@ def sync_table_groups():
                 # jeśli UI wysłał ID którego nie ma w Pracownicy, pomijamy (żeby nie robić 500)
                 continue
             if sid not in staff_to_kelner_id:
-                new_k = Kelnerzy(Pracownicy_ID=sid, Strefa_ID=DEFAULT_GROUP_ID)  # legacy ustawimy niżej
+                new_k = Kelnerzy(Pracownicy_ID=sid)
                 db.session.add(new_k)
                 db.session.flush()
                 staff_to_kelner_id[sid] = new_k.ID
@@ -185,18 +176,6 @@ def sync_table_groups():
             db.session.add(KelnerzyStrefy(Kelnerzy_ID=kelner_id, Strefa_ID=gid))
 
     db.session.flush()
-
-    # 5) LEGACY: ustaw "primary strefę" w Stoliki.Strefa_ID i Kelnerzy.Strefa_ID
-    #    (żeby stare endpointy / logika nadal działały)
-    # Stoliki
-    all_tables = Stoliki.query.all()
-    for t in all_tables:
-        t.Strefa_ID = table_primary_zone.get(t.ID, DEFAULT_GROUP_ID)
-
-    # Kelnerzy – po Pracownicy_ID
-    all_waiters = Kelnerzy.query.all()
-    for k in all_waiters:
-        k.Strefa_ID = staff_primary_zone.get(k.Pracownicy_ID, DEFAULT_GROUP_ID)
 
     db.session.commit()
     return jsonify({"status": "ok", "groups": len(data)})
