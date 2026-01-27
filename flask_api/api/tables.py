@@ -4,7 +4,8 @@ from flask_api.api import api_bp
 from flask_api.extensions import db
 from flask_api.models import Strefa, Stoliki, MapaStolikow
 from flask_api.utils import renumber_tables_by_id
-
+from flask_api.models import Zamowienia, Zam_Poz, Menu
+from flask_api.utils import bool_from_status, bool_from_wydane
 
 # -------------------------
 # Helpers
@@ -171,3 +172,65 @@ def patch_table(table_id: int):
     db.session.commit()
 
     return jsonify({"status": "ok", "Id": stolik.ID, "Ile_osob": stolik.Ile_osob}), 200
+
+
+@api_bp.get("/tables/<int:table_id>/order")
+def get_active_order_for_table(table_id: int):
+    # opcjonalnie: upewnij się, że stolik istnieje
+    stolik = Stoliki.query.get(table_id)
+    if not stolik:
+        return jsonify({"error": "Table not found"}), 404
+
+    # bierzemy najnowsze "open" zamówienie dla stolika
+    zam = (
+        Zamowienia.query
+        .filter_by(Stoliki_ID=table_id, Status="open")
+        .order_by(Zamowienia.Data.desc())
+        .first()
+    )
+
+    if not zam:
+        return jsonify({"TableId": table_id, "Order": None}), 200
+
+    rows = (
+        db.session.query(Zam_Poz, Menu)
+        .join(Menu, Menu.ID == Zam_Poz.Menu_ID)
+        .filter(Zam_Poz.Zamowienia_ID == zam.ID)
+        .all()
+    )
+
+    items = []
+    any_items = False
+    all_served = True
+
+    for poz, menu in rows:
+        any_items = True
+        served = bool_from_wydane(poz.Wydane)
+        if not served:
+            all_served = False
+
+        items.append({
+            "ItemId": poz.ID,
+            "MenuId": menu.ID,
+            "Name": menu.Nazwa,
+            "Qty": int(poz.Ilosc),
+            "IsServed": served,
+            # opcjonalnie (przydatne w UI/rachunku):
+            "Price": float(menu.Cena) if menu.Cena is not None else 0.0,
+            "LineTotal": (float(menu.Cena) * int(poz.Ilosc)) if menu.Cena is not None else 0.0,
+        })
+
+    order_json = {
+        "OrderId": zam.ID,
+        "TableId": table_id,
+        "WaiterId": zam.Kelnerzy_ID,
+        "Items": items,
+        "IsServed": (all_served if any_items else False),
+        "IsSettled": bool_from_status(zam.Status),
+        "CreatedAt": zam.Data.isoformat(),
+        "Notes": zam.Uwagi,
+        "Status": zam.Status,
+    }
+
+    return jsonify({"TableId": table_id, "Order": order_json}), 200
+
