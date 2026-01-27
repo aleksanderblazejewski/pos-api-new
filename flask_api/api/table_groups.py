@@ -10,6 +10,7 @@ from flask_api.models import (
     StolikiStrefy,     # <-- model tabeli łączącej
     KelnerzyStrefy,    # <-- model tabeli łączącej
 )
+from flask_api.utils import renumber_tables_by_id
 
 
 DEFAULT_GROUP_ID = 1
@@ -198,5 +199,6 @@ def sync_table_groups():
     for k in all_waiters:
         k.Strefa_ID = staff_primary_zone.get(k.Pracownicy_ID, DEFAULT_GROUP_ID)
 
+    renumber_tables_by_id()
     db.session.commit()
     return jsonify({"status": "ok", "groups": len(data)})

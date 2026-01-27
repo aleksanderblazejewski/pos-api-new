@@ -32,6 +32,7 @@ class Strefa(db.Model):
 class Stoliki(db.Model):
     __tablename__ = "Stoliki"
     ID = db.Column(db.Integer, primary_key=True)
+    Numer = db.Column(db.Integer, nullable=False)
     Ile_osob = db.Column(db.Integer, nullable=False)
     Strefa_ID = db.Column(db.Integer, db.ForeignKey("Strefa.ID"), nullable=False)
 
