@@ -3,7 +3,7 @@ from flask import jsonify, request
 from flask_api.api import api_bp
 from flask_api.extensions import db
 from flask_api.models import Strefa, Stoliki, MapaStolikow
-from flask_api.utils import DEFAULT_WIDTH, DEFAULT_HEIGHT, renumber_tables_by_id
+from flask_api.utils import renumber_tables_by_id
 
 
 # -------------------------
@@ -39,8 +39,7 @@ def get_tables():
                 "Name": mapa.Nazwa,
                 "X": _safe_int(mapa.X_Pos, 0),
                 "Y": _safe_int(mapa.Y_Pos, 0),
-                "Width": DEFAULT_WIDTH,
-                "Height": DEFAULT_HEIGHT,
+                "Rotation": _safe_int(getattr(mapa, "Rotation", None), 0),
                 "Ile_osob": _safe_int(stolik.Ile_osob, 4),
                 "status": "wolny",
                 "Level": level,  # zawsze int
@@ -112,6 +111,7 @@ def sync_tables():
         name = (item.get("Name") or "").strip()
         x = safe_int(item.get("X", 0), 0)
         y = safe_int(item.get("Y", 0), 0)
+        rotation = safe_int(item.get("Rotation", 0), 0)
         level = safe_int(item.get("Level", 1), 1)
 
         stolik = Stoliki.query.get(table_id)
@@ -128,7 +128,7 @@ def sync_tables():
         if row:
             row.X_Pos = x
             row.Y_Pos = y
-            row.Rotation = 0
+            row.Rotation = rotation
             row.Nazwa = name
             row.Poziom = level
         else:
@@ -136,7 +136,7 @@ def sync_tables():
                 Stoliki_ID=stolik.ID,
                 X_Pos=x,
                 Y_Pos=y,
-                Rotation=0,
+                Rotation=rotation,
                 Nazwa=name,
                 Poziom=level,
             ))
