@@ -1,5 +1,8 @@
 from datetime import datetime
 
+from flask_api.extensions import db
+from flask_api.models import Stoliki
+
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 160
 
@@ -27,3 +30,11 @@ def parse_iso_datetime(value):
         return datetime.fromisoformat(s)
     except Exception:
         return datetime.utcnow()
+
+
+def renumber_tables_by_id() -> int:
+    tables = Stoliki.query.order_by(Stoliki.ID.asc()).all()
+    for index, table in enumerate(tables, start=1):
+        table.Numer = index
+    db.session.flush()
+    return len(tables)

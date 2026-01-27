@@ -3,7 +3,7 @@ from flask import jsonify, request
 from flask_api.api import api_bp
 from flask_api.extensions import db
 from flask_api.models import Strefa, Stoliki, MapaStolikow
-from flask_api.utils import DEFAULT_WIDTH, DEFAULT_HEIGHT
+from flask_api.utils import DEFAULT_WIDTH, DEFAULT_HEIGHT, renumber_tables_by_id
 
 
 # -------------------------
@@ -143,6 +143,7 @@ def sync_tables():
 
         count += 1
 
+    renumber_tables_by_id()
     db.session.commit()
     return jsonify({"status": "ok", "count": count})
 

@@ -15,7 +15,7 @@ from flask_api.models import (
     Zamowienia,
     Zam_Poz,
 )
-from flask_api.utils import bool_from_status, bool_from_wydane, parse_iso_datetime
+from flask_api.utils import bool_from_status, bool_from_wydane, parse_iso_datetime, renumber_tables_by_id
 
 
 @api_bp.post("/orders/<int:order_id>/items")
@@ -315,6 +315,7 @@ def sync_orders():
 
             orders_count += 1
 
+    renumber_tables_by_id()
     db.session.commit()
     return jsonify({"status": "ok", "orders": orders_count, "positions": positions_count})
 
