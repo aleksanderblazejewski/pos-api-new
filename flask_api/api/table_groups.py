@@ -202,3 +202,41 @@ def sync_table_groups():
     renumber_tables_by_id()
     db.session.commit()
     return jsonify({"status": "ok", "groups": len(data)})
+
+
+@api_bp.delete("/table-groups/<int:group_id>")
+def delete_table_group(group_id: int):
+    if group_id == DEFAULT_GROUP_ID:
+        return jsonify({"error": "Cannot delete default group"}), 409
+
+    strefa = Strefa.query.get(group_id)
+    if not strefa:
+        return jsonify({"error": "Table group not found"}), 404
+
+    _ensure_default_zone()
+
+    StolikiStrefy.query.filter_by(Strefa_ID=group_id).delete(synchronize_session=False)
+    KelnerzyStrefy.query.filter_by(Strefa_ID=group_id).delete(synchronize_session=False)
+    db.session.flush()
+
+    tables = Stoliki.query.filter_by(Strefa_ID=group_id).all()
+    for table in tables:
+        remaining = (
+            StolikiStrefy.query.filter_by(Stoliki_ID=table.ID)
+            .with_entities(StolikiStrefy.Strefa_ID)
+            .all()
+        )
+        table.Strefa_ID = remaining[0][0] if remaining else DEFAULT_GROUP_ID
+
+    waiters = Kelnerzy.query.filter_by(Strefa_ID=group_id).all()
+    for waiter in waiters:
+        remaining = (
+            KelnerzyStrefy.query.filter_by(Kelnerzy_ID=waiter.ID)
+            .with_entities(KelnerzyStrefy.Strefa_ID)
+            .all()
+        )
+        waiter.Strefa_ID = remaining[0][0] if remaining else DEFAULT_GROUP_ID
+
+    db.session.delete(strefa)
+    db.session.commit()
+    return jsonify({"status": "ok"})
