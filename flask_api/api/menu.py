@@ -10,11 +10,12 @@ def get_menu():
     items = Menu.query.all()
     result = []
     for m in items:
+        category = m.Typ or "Inne"
         result.append(
             {
                 "Id": m.ID,
                 "Name": m.Nazwa,
-                "Category": "Inne",
+                "Category": category,
                 "Price": float(m.Cena),
                 "IsActive": True,
             }
@@ -39,11 +40,13 @@ def sync_menu():
 
         name = item.get("Name", "")
         price = item.get("Price", 0)
+        category = item.get("Category") or item.get("Type") or item.get("Typ")
 
         db.session.add(
             Menu(
                 ID=menu_id,
                 Nazwa=name,
+                Typ=category,
                 Cena=price,
                 Opis="",
                 Alergeny=None,
@@ -52,3 +55,15 @@ def sync_menu():
 
     db.session.commit()
     return jsonify({"status": "ok", "count": len(data)})
+
+
+@api_bp.delete("/menu/<int:menu_id>")
+def delete_menu_item(menu_id: int):
+    menu_row = Menu.query.get(menu_id)
+    if not menu_row:
+        return jsonify({"error": "Menu item not found"}), 404
+
+    Zam_Poz.query.filter_by(Menu_ID=menu_id).delete()
+    db.session.delete(menu_row)
+    db.session.commit()
+    return jsonify({"status": "ok"})

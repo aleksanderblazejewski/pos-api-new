@@ -31,7 +31,7 @@ def add_order_item(order_id: int):
 
     menu_row = Menu.query.filter_by(Nazwa=name).first()
     if not menu_row:
-        menu_row = Menu(Nazwa=name, Cena=0, Opis="AUTO", Alergeny=None)
+        menu_row = Menu(Nazwa=name, Typ="Inne", Cena=0, Opis="AUTO", Alergeny=None)
         db.session.add(menu_row)
         db.session.flush()
 
@@ -296,6 +296,7 @@ def sync_orders():
                 if not menu_row:
                     menu_row = Menu(
                         Nazwa=name,
+                        Typ="Inne",
                         Cena=0,
                         Opis="AUTO z orders.json",
                         Alergeny=None,
