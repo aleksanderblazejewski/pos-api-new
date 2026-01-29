@@ -29,9 +29,21 @@ def sync_menu():
     if not isinstance(data, list):
         return jsonify({"error": "Expected a JSON array"}), 400
 
-    Zam_Poz.query.delete()
-    Menu.query.delete()
-    db.session.flush()
+    incoming_ids = set()
+    for item in data:
+        menu_id = item.get("Id")
+        if menu_id is not None:
+            incoming_ids.add(menu_id)
+
+    existing_ids = {row.ID for row in Menu.query.with_entities(Menu.ID).all()}
+    removed_ids = existing_ids - incoming_ids
+    if removed_ids:
+        Zam_Poz.query.filter(Zam_Poz.Menu_ID.in_(removed_ids)).delete(
+            synchronize_session=False
+        )
+        Menu.query.filter(Menu.ID.in_(removed_ids)).delete(
+            synchronize_session=False
+        )
 
     for item in data:
         menu_id = item.get("Id")
@@ -42,16 +54,24 @@ def sync_menu():
         price = item.get("Price", 0)
         category = item.get("Category") or item.get("Type") or item.get("Typ")
 
-        db.session.add(
-            Menu(
-                ID=menu_id,
-                Nazwa=name,
-                Typ=category,
-                Cena=price,
-                Opis="",
-                Alergeny=None,
+        menu_row = Menu.query.get(menu_id)
+        if menu_row:
+            menu_row.Nazwa = name
+            menu_row.Typ = category
+            menu_row.Cena = price
+            if menu_row.Opis is None:
+                menu_row.Opis = ""
+        else:
+            db.session.add(
+                Menu(
+                    ID=menu_id,
+                    Nazwa=name,
+                    Typ=category,
+                    Cena=price,
+                    Opis="",
+                    Alergeny=None,
+                )
             )
-        )
 
     db.session.commit()
     return jsonify({"status": "ok", "count": len(data)})
