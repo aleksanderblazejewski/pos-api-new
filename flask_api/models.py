@@ -128,6 +128,7 @@ class Menu(db.Model):
     __tablename__ = "Menu"
     ID = db.Column(db.Integer, primary_key=True)
     Nazwa = db.Column(db.String(100), nullable=False)
+    Typ = db.Column(db.String(100))
     Cena = db.Column(db.Numeric(6, 2), nullable=False)
     Opis = db.Column(db.String(255), nullable=False)
     Alergeny = db.Column(db.String(255))
